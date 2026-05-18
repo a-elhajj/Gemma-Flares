@@ -1,7 +1,7 @@
 <h1 align="center">Gemma Flares</h1>
 
 <p align="center">
-Track IBD patterns from phone and wearable data with grounded Gemma summaries.
+Track IBD patterns from phone and wearable data with grounded Gemma 4 summaries.
 </p>
 
 <p align="center">
@@ -14,11 +14,11 @@ Track IBD patterns from phone and wearable data with grounded Gemma summaries.
 Gemma Flares is a local-first Flutter app for people tracking inflammatory bowel
 disease patterns and preparing for GI visits. It combines phone and wearable
 context, symptom and lab logging, deterministic 7-day, 14-day, and 21-day risk
-pattern scores, and Gemma-assisted explanations that are grounded in local app
+pattern scores, and Gemma 4-assisted explanations that are grounded in local app
 evidence.
 
 Gemma Flares is not a diagnostic system, does not recommend medication changes,
-and does not let Gemma compute the risk score. Deterministic app code owns risk
+and does not let Gemma 4 compute the risk score. Deterministic app code owns risk
 math, persistence, routing, validation, and save/delete truth.
 
 ## Demo
@@ -44,7 +44,7 @@ scripts/ios/run_ios_profile.sh --fast-ui --reset-setup -d <device-id>
 ## Key features
 
 - Computes deterministic 7-day, 14-day, and 21-day flare-risk pattern scores.
-- Separates scoring from Gemma so model output explains grounded evidence rather
+- Separates scoring from Gemma 4 so model output explains grounded evidence rather
     than deciding risk.
 - Ingests phone and wearable context from sources such as Oura Ring, Apple
     Watch, Google watch devices, and other supported integrations after explicit
@@ -70,14 +70,14 @@ flowchart TD
     Labs --> Risk
     Summary --> Risk
     Risk --> Store[(SQLCipher SQLite)]
-    Store --> Gemma[Local Gemma task services]
-    Gemma --> Explain[Grounded explanations and GI summaries]
+    Store --> Gemma4[Local Gemma 4 task services]
+    Gemma4 --> Explain[Grounded explanations and GI summaries]
     Explain --> Review[Review-before-save UI]
 ```
 
 Flutter owns the product workflow while native bridges handle wearable data and
 text-recognition integration. The risk engine persists auditable inputs and
-contribution breakdowns before Gemma services produce grounded explanations,
+contribution breakdowns before Gemma 4 services produce grounded explanations,
 extraction drafts, and summary text.
 
 ## Requirements
@@ -138,12 +138,12 @@ checkout.
 | `GEMMA_FLARES_DEVICE_AGENT` | No | `false` | Dart define that launches the device-agent UI instead of the main app. |
 | `GEMMA_FLARES_DEV_RESET` | No | `false` | Dart define that clears setup state and profile before launch in non-release builds. |
 | `GEMMA_EVAL_LIMIT` | No | `16` | Limits scenarios in `test/gemma_eval/local_agent_eval_runner_test.dart`. |
-| `GEMMA_EVAL_OUTPUT` | No | `tooling/gemma_eval/out/local_agent_results.jsonl` | Output path for Gemma eval test results. |
-| `GEMMA_EVAL_SCENARIOS` | No | `tooling/gemma_eval/out/scenarios.jsonl` | Scenario JSONL path for Gemma eval tests. |
+| `GEMMA_EVAL_OUTPUT` | No | `tooling/gemma_eval/out/local_agent_results.jsonl` | Output path for Gemma 4 eval test results. |
+| `GEMMA_EVAL_SCENARIOS` | No | `tooling/gemma_eval/out/scenarios.jsonl` | Scenario JSONL path for Gemma 4 eval tests. |
 | `GEMMA_EVAL_TIMEOUT_MINUTES` | No | `20` | Timeout budget for the local agent eval runner. |
 | `GOLD_RAP_LOCAL_DEV` | No | `1` outside CI, `0` in CI | Selects faster local Gold RAP behavior. |
 | `GOLD_RAP_SCHEMA_SAFETY_ONLY` | No | `0` | Runs only schema and safety checks in Gold RAP. |
-| `GOLD_RAP_SKIP_GEMMA_EVAL` | No | follows `GOLD_RAP_LOCAL_DEV` | Controls the disabled Gemma eval block in Gold RAP. |
+| `GOLD_RAP_SKIP_GEMMA_EVAL` | No | follows `GOLD_RAP_LOCAL_DEV` | Controls the disabled Gemma 4 eval block in Gold RAP. |
 | `GOLD_RAP_SKIP_TESTS` | No | `0` | Skips Gold RAP test execution when set to `1`. |
 | `GOLD_RAP_SKIP_UI_WIDGET` | No | follows `GOLD_RAP_LOCAL_DEV` | Skips app/features/widget test targets in Gold RAP. |
 | `GOLD_RAP_TEST_EXCLUDE_TAGS` | No | `extended,slow` in local dev | Comma-separated tags excluded from Gold RAP tests. |
@@ -189,7 +189,7 @@ scripts/validation/verify_ios_release_artifact.sh build/ios/iphoneos/Runner.app 
 ├── lib/                 Flutter app, feature screens, services, and database code
 ├── scripts/             Validation, iOS profile, and model artifact automation
 ├── test/                Unit, widget, integration, autonomous, and eval tests
-└── tooling/             Gemma eval and QA evidence pipeline tools
+└── tooling/             Gemma 4 eval and QA evidence pipeline tools
 ```
 
 ## Development
@@ -236,7 +236,7 @@ Gemma Flares uses `flutter_test`, `integration_test`, `mockito`, and
 | `test/features/` | Feature-screen and flow tests |
 | `test/app/` | App shell and readiness tests |
 | `test/autonomous/` | Autonomous UI and capability flows |
-| `test/gemma_eval/` | Local agent and persona evaluation tests |
+| `test/gemma_eval/` | Local Gemma 4 agent and persona evaluation tests |
 | `integration_test/` | Device smoke and adversarial prompt-injection integration tests |
 
 Common commands:

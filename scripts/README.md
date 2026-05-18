@@ -74,7 +74,7 @@ scripts/ios/run_ios_profile.sh --fast-ui --reset-setup -d <device-id>
 | `GEMMA_FLARES_RETRY_DEVICECTL` | No | `1` | Enables retry behavior for device-control operations. |
 | `GOLD_RAP_LOCAL_DEV` | No | `1` outside CI, `0` in CI | Uses faster local Gold RAP defaults. |
 | `GOLD_RAP_SCHEMA_SAFETY_ONLY` | No | `0` | Runs only schema and safety checks. |
-| `GOLD_RAP_SKIP_GEMMA_EVAL` | No | follows `GOLD_RAP_LOCAL_DEV` | Controls the disabled Gemma eval block in Gold RAP. |
+| `GOLD_RAP_SKIP_GEMMA_EVAL` | No | follows `GOLD_RAP_LOCAL_DEV` | Controls the disabled Gemma 4 eval block in Gold RAP. |
 | `GOLD_RAP_SKIP_TESTS` | No | `0` | Skips Gold RAP tests. |
 | `GOLD_RAP_SKIP_UI_WIDGET` | No | follows `GOLD_RAP_LOCAL_DEV` | Skips app, feature, and widget test targets. |
 | `GOLD_RAP_TEST_EXCLUDE_TAGS` | No | `extended,slow` in local dev | Tags excluded from Gold RAP test runs. |
