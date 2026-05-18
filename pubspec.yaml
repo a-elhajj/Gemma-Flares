@@ -1,7 +1,7 @@
 name: gemma_flares
 description: Local-first Crohn's flare companion with Apple Watch ingestion and Gemma 4 E2B on iPhone.
 publish_to: 'none'
-version: 1.0.1+17
+version: 1.0.1+19
 
 environment:
   sdk: ^3.4.0
