@@ -1,24 +1,31 @@
-# Documentation Index
+# Gemma Flares / docs
 
-This directory contains the public, high-trust documentation set for Gemma
-Flares.
+Part of [Gemma Flares](../README.md). This directory contains the public
+documentation that backs product claims, technical boundaries, and reviewer
+walkthroughs.
 
-## Core Documents
+## Documents
 
-| Document | Purpose |
+| Document | Use it for |
 | --- | --- |
-| [product-truth-readme.md](product-truth-readme.md) | Public claim guardrails: what we can and cannot claim |
-| [technical-readme.md](technical-readme.md) | Engineering proof map and verification commands |
+| [product-truth-readme.md](product-truth-readme.md) | Public claim guardrails: what Gemma Flares can and cannot claim. |
+| [technical-readme.md](technical-readme.md) | Engineering evidence map, validation commands, and implementation boundaries. |
+| [archived/](archived/) | Historical documents that are no longer the current public source of truth. |
 
-## Documentation Standards
+## How to update docs
 
-- Keep claims evidence-backed with code, tests, or scripts.
-- Prefer stable wording over sprint-specific status language.
-- Avoid internal process notes, private planning artifacts, or local-only logs.
-- Update docs when behavior changes in `lib/`, `ios/`, `db/`, or `scripts/`.
+1. Start with the behavior change in `lib/`, `ios/`, `db/`, `scripts/`, or
+  `tooling/`.
+2. Update the document that owns the public claim or technical evidence.
+3. Keep wording stable and evidence-backed; avoid sprint notes and private
+  workflow details.
+4. Run the smallest relevant validation command before widening to the full
+  quality gate.
 
-## Audience
+```bash
+flutter analyze --no-pub
+flutter test --exclude-tags=slow
+```
 
-- **Judges / reviewers**: Start with `product-truth-readme.md`.
-- **Engineers**: Use `technical-readme.md` for implementation and validation
-  references.
+Use the root [README](../README.md) for setup, testing, deployment, security,
+and contribution guidance.
