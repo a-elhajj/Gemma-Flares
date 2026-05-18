@@ -603,6 +603,17 @@ class WearableAggregationService {
 
   // ── Public API ─────────────────────────────────────────────────────────
 
+  /// Read-only view of the phrase → spec index. Used by
+  /// [HealthKitIntentClassifier] to enumerate all registered phrases for
+  /// exact-match scanning and fuzzy fallback. Unmodifiable.
+  Map<String, WearableMetricSpec> get allPhrases => _kPhraseIndex;
+
+  /// Public window matcher — same behaviour as the internal call used by
+  /// [resolve]. Exposed so a higher-level intent classifier can resolve
+  /// comparison reference windows without re-implementing the lexicon.
+  WearableWindow? matchWindow(String lowerInput, {required DateTime now}) =>
+      _matchWindow(lowerInput, now: now);
+
   /// Resolves [userMessage] to a [WearableQueryPlan], or null if the message
   /// is not a specific metric+window ask (fall through to summary path).
   WearableQueryPlan? resolve(String userMessage, {DateTime? now}) {
@@ -656,6 +667,145 @@ class WearableAggregationService {
       max: base.max,
       sampleDays: base.sampleDays,
       unit: base.unit,
+      sourceCount: sources.length,
+      sourceNames: sources,
+    );
+  }
+
+  /// Executes [plan] using an explicit aggregation method override.
+  ///
+  /// When [method] is null or 'defaultForMetric' the call delegates to
+  /// [execute] and uses the metric's natural rule. Otherwise the method
+  /// is applied to the raw daily rows ignoring [WearableMetricSpec.rule].
+  ///
+  /// Supported overrides:
+  ///   - average / mean         → arithmetic mean across days
+  ///   - sum / total            → cumulative sum
+  ///   - max                    → largest single-day max_value
+  ///   - min                    → smallest single-day min_value
+  ///   - median                 → middle daily avg_value (sorted)
+  ///   - latest                 → most recent non-null reading
+  ///
+  /// Returns [WearableAggResult] with value=null when no rows exist.
+  Future<WearableAggResult> executeWithMethod(
+    WearableQueryPlan plan,
+    String? method,
+  ) async {
+    if (method == null ||
+        method.isEmpty ||
+        method == 'defaultForMetric') {
+      return execute(plan);
+    }
+
+    final rows = await _repository.getMetricRowsForWindow(
+      dbName: plan.metric.dbName,
+      startDate: plan.window.startDate,
+      endDate: plan.window.endDate,
+    );
+    final sources = rows.isEmpty
+        ? const <String>[]
+        : await _repository.getDistinctSourcesForWindow(
+            dbName: plan.metric.dbName,
+            startDate: plan.window.startDate,
+            endDate: plan.window.endDate,
+          );
+
+    if (rows.isEmpty) {
+      return WearableAggResult(
+        metric: plan.metric,
+        window: plan.window,
+        value: null,
+        min: null,
+        max: null,
+        sampleDays: 0,
+        unit: plan.metric.unit,
+      );
+    }
+
+    double? value;
+    double? minV;
+    double? maxV;
+    final unit = plan.metric.unit;
+
+    switch (method) {
+      case 'sum':
+      case 'total':
+        var s = 0.0;
+        for (final r in rows) {
+          s += (r['total_value'] as num? ?? 0).toDouble();
+        }
+        value = unit == 'km' ? s / 1000.0 : s;
+        break;
+      case 'average':
+      case 'mean':
+        var sum = 0.0;
+        var cnt = 0;
+        for (final r in rows) {
+          final avg = (r['avg_value'] as num?)?.toDouble();
+          if (avg == null) continue;
+          sum += avg;
+          cnt++;
+        }
+        value = cnt > 0 ? sum / cnt : null;
+        break;
+      case 'max':
+        for (final r in rows) {
+          final v =
+              (r['max_value'] as num?)?.toDouble() ??
+                  (r['total_value'] as num?)?.toDouble();
+          if (v == null) continue;
+          if (maxV == null || v > maxV) maxV = v;
+        }
+        value = maxV;
+        break;
+      case 'min':
+        for (final r in rows) {
+          final v =
+              (r['min_value'] as num?)?.toDouble() ??
+                  (r['total_value'] as num?)?.toDouble();
+          if (v == null) continue;
+          if (minV == null || v < minV) minV = v;
+        }
+        value = minV;
+        break;
+      case 'median':
+        final vals = <double>[];
+        for (final r in rows) {
+          final v = (r['avg_value'] as num?)?.toDouble() ??
+              (r['total_value'] as num?)?.toDouble();
+          if (v != null) vals.add(v);
+        }
+        if (vals.isNotEmpty) {
+          vals.sort();
+          final mid = vals.length ~/ 2;
+          value = vals.length.isOdd
+              ? vals[mid]
+              : (vals[mid - 1] + vals[mid]) / 2.0;
+        }
+        break;
+      case 'latest':
+        for (final r in rows) {
+          final v = (r['max_value'] as num?)?.toDouble() ??
+              (r['avg_value'] as num?)?.toDouble();
+          if (v != null) {
+            value = v;
+            break;
+          }
+        }
+        break;
+      default:
+        // Unknown method → fall back to the natural rule.
+        return execute(plan);
+    }
+
+    return WearableAggResult(
+      metric: plan.metric,
+      window: plan.window,
+      value: value,
+      min: minV,
+      max: maxV,
+      sampleDays: rows.length,
+      unit: unit,
       sourceCount: sources.length,
       sourceNames: sources,
     );
