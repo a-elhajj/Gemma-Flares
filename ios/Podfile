@@ -1,5 +1,5 @@
 # Gemma Flares targets the current LiteRT-LM mobile path; no deprecated MediaPipe GenAI mobile pods are linked here.
-platform :ios, '16.4'
+platform :ios, '26.2'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
