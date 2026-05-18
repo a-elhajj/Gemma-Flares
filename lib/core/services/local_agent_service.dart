@@ -865,11 +865,16 @@ class LocalAgentService {
     // Wearable data questions and PR #11 trend starters need per-metric daily
     // aggregates from SQLite. Without this, HRV/activity starter prompts drift
     // into generic risk prose even though the UI advertises structured tools.
+    // Use 60 days for wearable_data_question so Gemma has coverage for
+    // "this month", "last month", and month-vs-month comparisons.
     if (intent == 'wearable_data_question' ||
         intent == 'hrv_trend_analysis' ||
         intent == 'activity_pattern_analysis') {
+      final wearableDays = intent == 'wearable_data_question'
+          ? _wearableAggWindowDays(lower)
+          : 14;
       final wearableAggregates = await _repository.getWearableMetricAggregates(
-        days: 14,
+        days: wearableDays,
         now: _nowProvider(),
       );
       groundedSummaryJson['wearable_metric_aggregates'] = wearableAggregates;
@@ -8261,10 +8266,13 @@ class LocalAgentService {
   }
 
   /// Deterministic wearable reply using [WearableAggregationService].
-  /// Tries to resolve a specific metric+window from [userMessage]. If
-  /// resolved, executes the DB query and renders the answer without Gemma.
-  /// Falls back to [_timeSpecificWearableReply] (steps-only legacy) or
-  /// [_appleWatchReviewReply] (general summary) when no plan resolves.
+  ///
+  /// Resolution priority:
+  ///   1. Comparison query ("HRV this month vs last month") → renderComparison
+  ///   2. Multi-metric query ("steps and HRV this week") → renderMultiple
+  ///   3. Single metric+window query → render
+  ///   4. Legacy steps-only path (phrasing without explicit window)
+  ///   5. General Apple Watch review summary
   Future<String> _resolvedWearableReply({
     required String userMessage,
     required String lower,
@@ -8284,6 +8292,22 @@ class LocalAgentService {
     }
 
     final now = _nowProvider();
+
+    // ── 1. Comparison resolution ("X this week vs last week") ──────────────
+    final compPlan = _wearableAgg.resolveComparison(userMessage, now: now);
+    if (compPlan != null) {
+      final compResult = await _wearableAgg.executeComparison(compPlan);
+      return _wearableAgg.renderComparison(compResult);
+    }
+
+    // ── 2. Multi-metric resolution ("steps and HRV this week") ─────────────
+    final multiPlans = _wearableAgg.resolveMultiple(userMessage, now: now);
+    if (multiPlans.isNotEmpty) {
+      final multiResults = await _wearableAgg.executeMultiple(multiPlans);
+      return _wearableAgg.renderMultiple(multiResults);
+    }
+
+    // ── 3. Single metric+window resolution ──────────────────────────────────
     final plan = _wearableAgg.resolve(userMessage, now: now);
     if (plan != null) {
       final result = await _wearableAgg.execute(plan);
@@ -8300,8 +8324,7 @@ class LocalAgentService {
       return _wearableAgg.render(result);
     }
 
-    // Legacy steps-only path for phrasing like "how many steps did I take"
-    // without an explicit window that the new resolver handles.
+    // ── 4. Legacy steps-only path for phrasing without explicit window ───────
     if (_isTimeSpecificWearableQuestion(lower)) {
       return _timeSpecificWearableReply(
         userMessage: userMessage,
@@ -8310,6 +8333,7 @@ class LocalAgentService {
       );
     }
 
+    // ── 5. General Apple Watch review summary ────────────────────────────────
     return _appleWatchReviewReply(
       latestScore: latestScore,
       latestSummary: latestSummary,
@@ -8317,6 +8341,23 @@ class LocalAgentService {
       heartRhythmContext: heartRhythmContext,
       earlyWarningOutlook: earlyWarningOutlook,
     );
+  }
+
+  /// Returns how many days of wearable aggregate data to fetch for Gemma
+  /// context, based on what time window the user's message implies.
+  int _wearableAggWindowDays(String lower) {
+    // Month-range questions need at least 60 days to cover "last month".
+    if (lower.contains('last month') ||
+        lower.contains('this month') ||
+        lower.contains('past month') ||
+        lower.contains('past 30') ||
+        lower.contains('past 60') ||
+        lower.contains('past 2 month') ||
+        lower.contains('monthly')) {
+      return 62; // ~2 months of daily rows
+    }
+    // Default: 14 days is enough for "this week", "last week", trend queries.
+    return 14;
   }
 
   bool _isTimeSpecificWearableQuestion(String lower) {
@@ -9239,54 +9280,99 @@ class LocalAgentService {
 
   bool _isWearableDataQuestion(String lower) {
     const triggers = [
+      // Steps / activity
       'steps',
       'step count',
       'how much did i walk',
       'how far did i walk',
-      'heart rate',
-      'resting heart rate',
-      'my hr',
-      ' bpm',
-      'hrv',
-      'heart rate variability',
-      'how long did i sleep',
-      'how many hours did i sleep',
-      'sleep trend',
-      'sleep data',
-      'oxygen',
-      'spo2',
-      'blood oxygen',
+      'how active',
+      'how much did i move',
       'active calories',
       'energy burned',
       'calories burned',
       'activity rings',
       'move ring',
       'exercise ring',
-      'wrist temperature',
-      'body temperature',
-      'respiratory rate',
-      'breathing rate',
-      'walking heart rate',
+      'exercise minutes',
+      'workout',
+      'workouts',
+      'exercise session',
+      'flights climbed',
+      'floors climbed',
+      'stairs climbed',
+      // Cardiovascular
+      'heart rate',
+      'resting heart rate',
+      'my hr',
+      ' bpm',
+      'hrv',
+      'heart rate variability',
       'heart rate recovery',
       'recovery rate',
-      'vo2',
-      'cardio fitness',
-      'walking speed',
-      'stair ascent',
-      'stair speed',
+      'walking heart rate',
+      'high heart rate',
+      'low heart rate',
+      'irregular heart rhythm',
+      'irregular rhythm',
+      'arrhythmia',
       'afib',
       'atrial fibrillation',
+      'ecg',
+      'electrocardiogram',
+      'ekg',
+      // Oxygen & respiration
+      'oxygen',
+      'spo2',
+      'blood oxygen',
+      'respiratory rate',
+      'breathing rate',
       'breathing disturbance',
       'sleep disturbance',
+      // Sleep
+      'how long did i sleep',
+      'how many hours did i sleep',
+      'sleep trend',
+      'sleep data',
+      'wrist temperature',
+      'body temperature',
+      'skin temperature',
+      // Fitness
+      'vo2',
+      'cardio fitness',
+      // Mobility / gait
+      'walking speed',
+      'gait speed',
+      'stair ascent',
+      'stair descent',
+      'stair speed',
+      'step length',
+      'stride length',
+      'walking asymmetry',
+      'gait asymmetry',
+      'double support',
+      'six minute walk',
+      '6 minute walk',
+      '6-minute walk',
+      '6mwt',
+      // Nutrition / intake
       'water intake',
       'hydration',
       'caffeine',
+      'calorie intake',
+      'calories consumed',
+      'dietary energy',
+      'alcohol',
+      'alcoholic beverages',
+      'drinks',
+      // Medication (HealthKit-logged)
+      'medication dose',
+      'dose events',
+      // Device / generic
       'apple watch',
       'health app',
       'my wearable',
       'my sensor data',
-      'how active',
-      'how much did i move',
+      'healthkit',
     ];
     return triggers.any((kw) => lower.contains(kw));
   }
@@ -9939,7 +10025,7 @@ class LocalAgentService {
       case 'wearable_data_question':
         // Raw Apple Health metric aggregates — not IBD analysis, so strip score.
         // Inject date anchor strings so Gemma can resolve "yesterday" / "this
-        // week" to specific keys inside wearable_metric_aggregates.
+        // week" / "this month" to specific buckets inside wearable_metric_aggregates.
         copy('wearable_metric_aggregates');
         copy('recent_summary_dates');
         grounding.remove('latest_score');
@@ -9950,6 +10036,21 @@ class LocalAgentService {
         grounding['today_date'] = wToday;
         grounding['yesterday_date'] = _offsetDate(wToday, -1);
         grounding['week_start_date'] = _offsetDate(wToday, -6);
+        // Month anchors for "this month" / "last month" comparisons.
+        // Reuse _offsetDate logic: start from today and step backwards.
+        grounding['this_month_start'] =
+            '${wNow.year.toString().padLeft(4, '0')}-'
+            '${wNow.month.toString().padLeft(2, '0')}-01';
+        final wPrevMonthLast = DateTime(wNow.year, wNow.month, 0);
+        final wPrevMonthFirst =
+            DateTime(wPrevMonthLast.year, wPrevMonthLast.month, 1);
+        grounding['last_month_start'] =
+            '${wPrevMonthFirst.year.toString().padLeft(4, '0')}-'
+            '${wPrevMonthFirst.month.toString().padLeft(2, '0')}-01';
+        grounding['last_month_end'] =
+            '${wPrevMonthLast.year.toString().padLeft(4, '0')}-'
+            '${wPrevMonthLast.month.toString().padLeft(2, '0')}-'
+            '${wPrevMonthLast.day.toString().padLeft(2, '0')}';
         break;
       case 'data_gap_question':
         copy('latest_summary');

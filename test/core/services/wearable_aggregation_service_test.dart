@@ -89,6 +89,19 @@ WearableMetricSpec _specFor(String dbName) {
     'atrial_fibrillation_burden_pct': 'afib burden this month',
     'dietary_water_ml': 'water intake this week',
     'dietary_caffeine_mg': 'caffeine intake this week',
+    'workout': 'workout sessions this week',
+    'dietary_energy_kcal': 'calorie intake yesterday',
+    'alcoholic_beverages': 'alcohol this week',
+    'medication_dose_event': 'medication doses this week',
+    'walking_step_length_m': 'step length this week',
+    'walking_asymmetry_pct': 'walking asymmetry this week',
+    'walking_double_support_pct': 'double support this week',
+    'stair_descent_speed_mps': 'stair descent this week',
+    'six_minute_walk_distance_m': 'six minute walk this month',
+    'high_heart_rate_event': 'high heart rate events this week',
+    'low_heart_rate_event': 'low heart rate events this week',
+    'irregular_heart_rhythm_event': 'irregular heart rhythm events this month',
+    'electrocardiogram': 'ecg readings this week',
   };
   final plan = svc.resolve(
     phrases[dbName] ?? '$dbName yesterday',
@@ -547,6 +560,20 @@ void main() {
           'atrial_fibrillation_burden_pct',
           'dietary_water_ml',
           'dietary_caffeine_mg',
+          // New metrics
+          'workout',
+          'dietary_energy_kcal',
+          'alcoholic_beverages',
+          'medication_dose_event',
+          'walking_step_length_m',
+          'walking_asymmetry_pct',
+          'walking_double_support_pct',
+          'stair_descent_speed_mps',
+          'six_minute_walk_distance_m',
+          'high_heart_rate_event',
+          'low_heart_rate_event',
+          'irregular_heart_rhythm_event',
+          'electrocardiogram',
         ];
 
         for (final dbName in dbNames) {
@@ -605,6 +632,268 @@ void main() {
         expect(plan, isNull);
       },
     );
+  });
+
+  // ── New metric registry coverage ───────────────────────────────────────
+  group('New metrics — resolve() coverage', () {
+    late WearableAggregationService svc;
+
+    setUp(() => svc = WearableAggregationService(_StubRepo({})));
+
+    test('workout resolves with exercise session phrase', () {
+      final plan = svc.resolve('How many workout sessions this week?', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'workout');
+      expect(plan.metric.rule, WearableAggRule.sum);
+    });
+
+    test('dietary energy resolves with calorie intake phrase', () {
+      final plan = svc.resolve('Calorie intake yesterday', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'dietary_energy_kcal');
+    });
+
+    test('alcoholic beverages resolves with alcohol phrase', () {
+      final plan = svc.resolve('How much alcohol did I have this week?', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'alcoholic_beverages');
+    });
+
+    test('medication dose events resolves', () {
+      final plan = svc.resolve('Medication doses this week', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'medication_dose_event');
+    });
+
+    test('walking step length resolves', () {
+      final plan = svc.resolve('Step length this week', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'walking_step_length_m');
+    });
+
+    test('walking asymmetry resolves', () {
+      final plan = svc.resolve('Walking asymmetry this week', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'walking_asymmetry_pct');
+    });
+
+    test('stair descent speed resolves', () {
+      final plan = svc.resolve('Stair descent this week', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'stair_descent_speed_mps');
+    });
+
+    test('six minute walk test resolves with latest rule', () {
+      final plan = svc.resolve('Six minute walk this month', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'six_minute_walk_distance_m');
+      expect(plan.metric.rule, WearableAggRule.latest);
+    });
+
+    test('high heart rate events resolve', () {
+      final plan = svc.resolve('High heart rate events this week', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'high_heart_rate_event');
+    });
+
+    test('irregular heart rhythm events resolve', () {
+      final plan = svc.resolve('Irregular heart rhythm events this month', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'irregular_heart_rhythm_event');
+    });
+
+    test('ECG readings resolve', () {
+      final plan = svc.resolve('ECG readings this week', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'electrocardiogram');
+    });
+
+    test('"tonight" maps to today', () {
+      final plan = svc.resolve('How are my steps tonight?', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.window.startDate, kToday);
+      expect(plan.window.endDate, kToday);
+    });
+
+    test('"this morning" maps to today', () {
+      final plan = svc.resolve('What was my heart rate this morning?', now: kNow);
+      expect(plan, isNotNull);
+      expect(plan!.window.startDate, kToday);
+    });
+  });
+
+  // ── Comparison resolution ───────────────────────────────────────────────
+  group('WearableAggregationService — resolveComparison()', () {
+    late WearableAggregationService svc;
+
+    setUp(() => svc = WearableAggregationService(_StubRepo({})));
+
+    test('HRV this week vs last week resolves to two week windows', () {
+      final plan = svc.resolveComparison(
+        'How does my HRV this week compare to last week?',
+        now: kNow,
+      );
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'hrv_sdnn');
+      // windowA = this week (Mon–today)
+      expect(plan.windowA.startDate, '2026-05-11');
+      expect(plan.windowA.endDate, kToday);
+      // windowB = last week (Mon–Sun)
+      expect(plan.windowB.startDate, '2026-05-04');
+      expect(plan.windowB.endDate, '2026-05-10');
+    });
+
+    test('sleep this month vs last month resolves to two month windows', () {
+      final plan = svc.resolveComparison(
+        'What was my average sleep this month compared to last month?',
+        now: kNow,
+      );
+      expect(plan, isNotNull);
+      expect(plan!.metric.dbName, 'sleep_segment');
+      expect(plan.windowA.startDate, '2026-05-01');
+      expect(plan.windowB.startDate, '2026-04-01');
+      expect(plan.windowB.endDate, '2026-04-30');
+    });
+
+    test('no metric → returns null', () {
+      final plan = svc.resolveComparison(
+        'How was I this week vs last week?',
+        now: kNow,
+      );
+      expect(plan, isNull);
+    });
+
+    test('single window only (no comparison) → returns null', () {
+      final plan = svc.resolveComparison(
+        'Average HRV this week',
+        now: kNow,
+      );
+      expect(plan, isNull);
+    });
+  });
+
+  // ── Comparison execution & render ───────────────────────────────────────
+  group('WearableAggregationService — executeComparison() + renderComparison()', () {
+    test('render shows both values and direction (improvement)', () async {
+      final stub = _StubRepo({
+        'hrv_sdnn': [
+          // "this week" = 2026-05-11 to 2026-05-13
+          _row(date: '2026-05-13', total: 60, avg: 60, min: 55, max: 65, count: 3),
+          _row(date: '2026-05-12', total: 58, avg: 58, min: 50, max: 62, count: 3),
+          _row(date: '2026-05-11', total: 55, avg: 55, min: 50, max: 60, count: 3),
+          // "last week" = 2026-05-04 to 2026-05-10
+          _row(date: '2026-05-08', total: 45, avg: 45, min: 40, max: 50, count: 3),
+          _row(date: '2026-05-07', total: 43, avg: 43, min: 38, max: 48, count: 3),
+        ],
+      });
+      final svc = WearableAggregationService(stub);
+      final compPlan = svc.resolveComparison(
+        'HRV this week vs last week',
+        now: kNow,
+      )!;
+      final compResult = await svc.executeComparison(compPlan);
+      expect(compResult.resultA.value, isNotNull);
+      expect(compResult.resultB.value, isNotNull);
+      // A > B → positive delta → improving
+      expect(compResult.delta, greaterThan(0));
+      final rendered = svc.renderComparison(compResult);
+      expect(rendered, contains('ms'));
+      expect(rendered, contains('up'));
+      expect(rendered, contains('positive trend'));
+    });
+
+    test('render shows worsening direction when A < B', () async {
+      final stub = _StubRepo({
+        'hrv_sdnn': [
+          _row(date: '2026-05-12', total: 38, avg: 38, min: 30, max: 45, count: 3),
+          _row(date: '2026-05-08', total: 58, avg: 58, min: 50, max: 65, count: 3),
+        ],
+      });
+      final svc = WearableAggregationService(stub);
+      final compPlan = svc.resolveComparison(
+        'HRV this week vs last week',
+        now: kNow,
+      )!;
+      final compResult = await svc.executeComparison(compPlan);
+      expect(compResult.delta, lessThan(0));
+      final rendered = svc.renderComparison(compResult);
+      expect(rendered, contains('down'));
+    });
+
+    test('render handles missing data in windowA gracefully', () async {
+      final stub = _StubRepo({
+        'hrv_sdnn': [
+          // Only last-week data — no this-week data
+          _row(date: '2026-05-08', total: 50, avg: 50, min: 45, max: 55, count: 3),
+        ],
+      });
+      final svc = WearableAggregationService(stub);
+      final compPlan = svc.resolveComparison(
+        'HRV this week vs last week',
+        now: kNow,
+      )!;
+      final compResult = await svc.executeComparison(compPlan);
+      final rendered = svc.renderComparison(compResult);
+      expect(rendered, contains("don't have"));
+    });
+  });
+
+  // ── Multi-metric resolution ─────────────────────────────────────────────
+  group('WearableAggregationService — resolveMultiple()', () {
+    late WearableAggregationService svc;
+
+    setUp(() => svc = WearableAggregationService(_StubRepo({})));
+
+    test('steps and HRV this week → 2 plans sharing same window', () {
+      final plans = svc.resolveMultiple(
+        'What were my steps and HRV this week?',
+        now: kNow,
+      );
+      expect(plans.length, 2);
+      final dbNames = plans.map((p) => p.metric.dbName).toSet();
+      expect(dbNames, containsAll(['steps', 'hrv_sdnn']));
+      // Both plans share the same window
+      expect(plans[0].window.startDate, equals(plans[1].window.startDate));
+    });
+
+    test('single metric → returns empty (falls through to resolve())', () {
+      final plans = svc.resolveMultiple(
+        'What was my HRV this week?',
+        now: kNow,
+      );
+      expect(plans, isEmpty);
+    });
+
+    test('no window → returns empty', () {
+      final plans = svc.resolveMultiple(
+        'What were my steps and HRV?',
+        now: kNow,
+      );
+      expect(plans, isEmpty);
+    });
+  });
+
+  // ── Multi-metric rendering ──────────────────────────────────────────────
+  group('WearableAggregationService — renderMultiple()', () {
+    test('renders each metric separately with blank line separation', () async {
+      final stub = _StubRepo({
+        'steps': [
+          _row(date: kYesterday, total: 9000, avg: 9000, min: 0, max: 9000),
+        ],
+        'hrv_sdnn': [
+          _row(date: kYesterday, total: 0, avg: 52, min: 45, max: 60, count: 5),
+        ],
+      });
+      final svc = WearableAggregationService(stub);
+      final plans = svc.resolveMultiple(
+        'What were my steps and HRV yesterday?',
+        now: kNow,
+      )!;
+      final results = await svc.executeMultiple(plans);
+      final rendered = svc.renderMultiple(results);
+      expect(rendered, contains('9000')); // steps are formatted without commas
+      expect(rendered, contains('ms')); // HRV unit
+    });
   });
 
   // ── FEA-008: Multi-wearable confidence ─────────────────────────────────

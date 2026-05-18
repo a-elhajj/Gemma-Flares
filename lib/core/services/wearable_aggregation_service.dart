@@ -102,6 +102,48 @@ class WearableQueryPlan {
   final WearableWindow window;
 }
 
+/// Comparison plan: same metric over two distinct time windows.
+/// Returned by [WearableAggregationService.resolveComparison].
+class WearableComparisonPlan {
+  const WearableComparisonPlan({
+    required this.metric,
+    required this.windowA,
+    required this.windowB,
+  });
+  final WearableMetricSpec metric;
+  final WearableWindow windowA; // "primary" window (e.g. this month)
+  final WearableWindow windowB; // "reference" window (e.g. last month)
+}
+
+/// Result of a comparison execution.
+class WearableComparisonResult {
+  const WearableComparisonResult({
+    required this.metric,
+    required this.resultA,
+    required this.resultB,
+  });
+  final WearableMetricSpec metric;
+  final WearableAggResult resultA;
+  final WearableAggResult resultB;
+
+  /// Signed delta (A – B). Null when either value is missing.
+  double? get delta {
+    final a = resultA.value;
+    final b = resultB.value;
+    if (a == null || b == null) return null;
+    return a - b;
+  }
+
+  /// Percentage change relative to B. Null when B is 0 or either value missing.
+  double? get pctChange {
+    final b = resultB.value;
+    if (b == null || b == 0) return null;
+    final d = delta;
+    if (d == null) return null;
+    return (d / b) * 100;
+  }
+}
+
 // ── Metric registry ────────────────────────────────────────────────────────
 // Single source of truth for wearable metrics visible to the aggregation layer.
 // Normalized dbName is what WearableNormalizationService._metricName() returns
@@ -349,6 +391,164 @@ const _kRegistry = <WearableMetricSpec>[
     rule: WearableAggRule.sum,
     phrases: ['caffeine', 'caffeine intake', 'caffeine consumed'],
   ),
+  WearableMetricSpec(
+    type: HealthMetricType.workout,
+    dbName: 'workout',
+    displayName: 'workouts',
+    unit: 'sessions',
+    rule: WearableAggRule.sum,
+    phrases: [
+      'workout',
+      'workouts',
+      'exercise session',
+      'exercise sessions',
+      'training session',
+      'gym session',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.dietaryEnergyConsumed,
+    dbName: 'dietary_energy_kcal',
+    displayName: 'calorie intake',
+    unit: 'kcal',
+    rule: WearableAggRule.sum,
+    phrases: [
+      'calorie intake',
+      'calories consumed',
+      'dietary energy',
+      'food calories',
+      'energy consumed',
+      'caloric intake',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.numberOfAlcoholicBeverages,
+    dbName: 'alcoholic_beverages',
+    displayName: 'alcoholic beverages',
+    unit: 'drinks',
+    rule: WearableAggRule.sum,
+    phrases: [
+      'alcohol',
+      'alcoholic beverages',
+      'drinks',
+      'alcoholic drinks',
+      'beer',
+      'wine',
+      'alcohol intake',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.medicationDoseEvent,
+    dbName: 'medication_dose_event',
+    displayName: 'medication doses',
+    unit: 'doses',
+    rule: WearableAggRule.sum,
+    phrases: [
+      'medication dose',
+      'medication doses',
+      'dose events',
+      'medication events',
+      'doses logged',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.walkingStepLength,
+    dbName: 'walking_step_length_m',
+    displayName: 'step length',
+    unit: 'm',
+    rule: WearableAggRule.avgWeighted,
+    phrases: ['step length', 'stride length', 'walking step length'],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.walkingAsymmetryPercentage,
+    dbName: 'walking_asymmetry_pct',
+    displayName: 'walking asymmetry',
+    unit: '%',
+    rule: WearableAggRule.avgWeighted,
+    phrases: ['walking asymmetry', 'gait asymmetry', 'step asymmetry'],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.walkingDoubleSupportPercentage,
+    dbName: 'walking_double_support_pct',
+    displayName: 'double support time',
+    unit: '%',
+    rule: WearableAggRule.avgWeighted,
+    phrases: [
+      'double support',
+      'walking double support',
+      'ground contact time',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.stairDescentSpeed,
+    dbName: 'stair_descent_speed_mps',
+    displayName: 'stair descent speed',
+    unit: 'm/s',
+    rule: WearableAggRule.avgWeighted,
+    phrases: ['stair descent speed', 'stair descent', 'descending stairs'],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.sixMinuteWalkTestDistance,
+    dbName: 'six_minute_walk_distance_m',
+    displayName: '6-minute walk distance',
+    unit: 'm',
+    rule: WearableAggRule.latest,
+    phrases: [
+      'six minute walk',
+      '6 minute walk',
+      '6-minute walk',
+      'six-minute walk test',
+      '6mwt',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.highHeartRateEvent,
+    dbName: 'high_heart_rate_event',
+    displayName: 'high heart rate events',
+    unit: 'events',
+    rule: WearableAggRule.sum,
+    phrases: [
+      'high heart rate event',
+      'high heart rate events',
+      'elevated heart rate events',
+      'high hr event',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.lowHeartRateEvent,
+    dbName: 'low_heart_rate_event',
+    displayName: 'low heart rate events',
+    unit: 'events',
+    rule: WearableAggRule.sum,
+    phrases: [
+      'low heart rate event',
+      'low heart rate events',
+      'low hr event',
+      'bradycardia event',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.irregularHeartRhythmEvent,
+    dbName: 'irregular_heart_rhythm_event',
+    displayName: 'irregular rhythm events',
+    unit: 'events',
+    rule: WearableAggRule.sum,
+    phrases: [
+      'irregular heart rhythm',
+      'irregular rhythm events',
+      'arrhythmia events',
+      'rhythm events',
+      'irregular rhythm',
+    ],
+  ),
+  WearableMetricSpec(
+    type: HealthMetricType.electrocardiogram,
+    dbName: 'electrocardiogram',
+    displayName: 'ECG readings',
+    unit: 'readings',
+    rule: WearableAggRule.sum,
+    phrases: ['ecg', 'electrocardiogram', 'ecg reading', 'ekg'],
+  ),
 ];
 
 // Build a fast-lookup index: normalized phrase → metric spec.
@@ -559,6 +759,32 @@ class WearableAggregationService {
       'dietary_water_ml' => 'Water intake tracks logged hydration volume.',
       'dietary_caffeine_mg' =>
         'Caffeine intake tracks logged stimulant exposure.',
+      'workout' =>
+        'Workout sessions tracks intentional exercise events logged to Apple Health.',
+      'dietary_energy_kcal' =>
+        'Calorie intake tracks dietary energy logged to Apple Health or connected apps.',
+      'alcoholic_beverages' =>
+        'Alcoholic beverages tracks logged alcohol consumption events.',
+      'medication_dose_event' =>
+        'Medication dose events reflect doses logged via Apple Health.',
+      'walking_step_length_m' =>
+        'Walking step length reflects average stride distance, a functional mobility metric.',
+      'walking_asymmetry_pct' =>
+        'Walking asymmetry reflects the imbalance between left and right steps — lower is more symmetric.',
+      'walking_double_support_pct' =>
+        'Double support time reflects the portion of each gait cycle where both feet are on the ground — higher values can indicate slower, more cautious gait.',
+      'stair_descent_speed_mps' =>
+        'Stair descent speed reflects lower-body control and confidence during stair descent.',
+      'six_minute_walk_distance_m' =>
+        '6-minute walk test distance is a validated measure of functional exercise capacity.',
+      'high_heart_rate_event' =>
+        'High heart rate events are notifications from Apple Watch when resting HR exceeds your threshold.',
+      'low_heart_rate_event' =>
+        'Low heart rate events are notifications when resting HR falls below your threshold.',
+      'irregular_heart_rhythm_event' =>
+        'Irregular heart rhythm events reflect Apple Watch detections of possible irregular rhythm, which can indicate AFib.',
+      'electrocardiogram' =>
+        'ECG readings reflect manually taken electrocardiogram scans from Apple Watch.',
       _ => 'This metric reflects an Apple Health-derived physiological signal.',
     };
   }
@@ -616,6 +842,32 @@ class WearableAggregationService {
         'Lower intake can raise dehydration risk, especially on higher stool-loss days; consistency matters more than one single day.',
       'dietary_caffeine_mg' =>
         'Higher intake, especially later in the day, can reduce sleep quality and sometimes suppress recovery markers such as HRV.',
+      'workout' =>
+        'More sessions generally reflect stronger exercise consistency; fewer sessions can indicate intentional rest, fatigue, or lower tolerance.',
+      'dietary_energy_kcal' =>
+        'Compare to your typical intake; sustained deficits can affect energy and recovery, while surpluses may reflect increased appetite during recovery.',
+      'alcoholic_beverages' =>
+        'Even moderate intake can suppress HRV and disrupt sleep; trends around symptom flare days are worth watching.',
+      'medication_dose_event' =>
+        'Consistent dose logging supports adherence tracking; gaps may indicate missed doses or incomplete logging.',
+      'walking_step_length_m' =>
+        'Declining step length can indicate reduced mobility or fatigue; stable or improving length suggests steadier gait.',
+      'walking_asymmetry_pct' =>
+        'Lower asymmetry is generally better; rising asymmetry over time can indicate gait compensation or injury risk.',
+      'walking_double_support_pct' =>
+        'Higher double support can indicate more cautious gait; trending upward over weeks may reflect lower confidence or balance.',
+      'stair_descent_speed_mps' =>
+        'Declining stair descent speed can indicate lower functional confidence or lower-limb weakness; stable speed suggests maintained reserve.',
+      'six_minute_walk_distance_m' =>
+        'Higher distance reflects better functional capacity; month-to-month trend is more meaningful than a single reading.',
+      'high_heart_rate_event' =>
+        'Recurrent events at rest may indicate higher physiological stress or dehydration; discuss persistent patterns with your care team.',
+      'low_heart_rate_event' =>
+        'Isolated events in fit individuals are often normal; recurring events with symptoms should be reviewed by your care team.',
+      'irregular_heart_rhythm_event' =>
+        'Any recurrent irregular rhythm detection warrants clinical review, especially if associated with palpitations or shortness of breath.',
+      'electrocardiogram' =>
+        'Individual ECG readings are most meaningful when reviewed alongside symptoms; your care team can interpret results in clinical context.',
       _ =>
         'Use trend direction across several days, not one point, and interpret alongside symptoms and check-ins.',
     };
@@ -645,6 +897,227 @@ class WearableAggregationService {
     return '';
   }
 
+  // ── Comparison resolution ──────────────────────────────────────────────
+
+  /// Resolves a comparison query ("X this month vs last month") to a
+  /// [WearableComparisonPlan], or null if the message isn't a comparison.
+  WearableComparisonPlan? resolveComparison(
+    String userMessage, {
+    DateTime? now,
+  }) {
+    final lower = userMessage.toLowerCase();
+    final metric = _matchMetric(lower);
+    if (metric == null) return null;
+    final now_ = now ?? DateTime.now();
+
+    // Detect canonical comparison patterns.
+    // Strategy: extract two windows using stripped variants of the message.
+    WearableWindow? windowA;
+    WearableWindow? windowB;
+
+    // "this week vs last week" / "this month vs last month"
+    if (_containsAll(lower, ['this week', 'last week'])) {
+      windowA = _matchWindow('this week', now: now_);
+      windowB = _matchWindow('last week', now: now_);
+    } else if (_containsAll(lower, ['this month', 'last month'])) {
+      windowA = _matchWindow('this month', now: now_);
+      windowB = _matchWindow('last month', now: now_);
+    } else if (_containsAll(lower, ['this month', 'last'])) {
+      windowA = _matchWindow('this month', now: now_);
+      windowB = _matchWindow('last month', now: now_);
+    } else if (_containsAll(lower, ['this week', 'last'])) {
+      windowA = _matchWindow('this week', now: now_);
+      windowB = _matchWindow('last week', now: now_);
+    } else if (_containsAny(lower, ['compare', 'vs ', 'versus', 'compared to',
+      'compared with', 'vs.', 'against'])) {
+      // Generic comparison: try to find two distinct windows.
+      // Try this week / last week first, then this month / last month.
+      if (lower.contains('week')) {
+        if (lower.contains('this week')) {
+          windowA = _matchWindow('this week', now: now_);
+          windowB = _matchWindow('last week', now: now_);
+        } else {
+          windowA = _matchWindow('last week', now: now_);
+          windowB = _matchWindow('past 2 weeks', now: now_);
+        }
+      } else if (lower.contains('month')) {
+        if (lower.contains('this month')) {
+          windowA = _matchWindow('this month', now: now_);
+          windowB = _matchWindow('last month', now: now_);
+        } else {
+          windowA = _matchWindow('last month', now: now_);
+          // Compare last month to the month before
+          final prevMonthEnd = DateTime(now_.year, now_.month, 0);
+          final prevMonthStart = DateTime(prevMonthEnd.year, prevMonthEnd.month, 1);
+          final twoMonthsAgoStart = DateTime(prevMonthStart.year, prevMonthStart.month - 1, 1);
+          windowB = WearableWindow(
+            grain: WearableGrain.month,
+            startDate: _dateStr(twoMonthsAgoStart),
+            endDate: _dateStr(prevMonthStart.subtract(const Duration(days: 1))),
+            label: 'Two months ago',
+          );
+        }
+      } else if (lower.contains('yesterday') || lower.contains('today')) {
+        windowA = _matchWindow(lower.contains('today') ? 'today' : 'yesterday', now: now_);
+        windowB = _matchWindow(
+          lower.contains('today') ? 'yesterday' : 'last week',
+          now: now_,
+        );
+      }
+    }
+
+    if (windowA == null || windowB == null) return null;
+    return WearableComparisonPlan(metric: metric, windowA: windowA, windowB: windowB);
+  }
+
+  /// Executes a comparison plan and returns a [WearableComparisonResult].
+  Future<WearableComparisonResult> executeComparison(
+    WearableComparisonPlan plan,
+  ) async {
+    final planA = WearableQueryPlan(metric: plan.metric, window: plan.windowA);
+    final planB = WearableQueryPlan(metric: plan.metric, window: plan.windowB);
+    final resultA = await execute(planA);
+    final resultB = await execute(planB);
+    return WearableComparisonResult(metric: plan.metric, resultA: resultA, resultB: resultB);
+  }
+
+  /// Renders a comparison result into a human-readable English sentence.
+  String renderComparison(WearableComparisonResult result) {
+    final name = result.metric.displayName;
+    final labelA = result.resultA.window.label;
+    final labelB = result.resultB.window.label;
+
+    if (result.resultA.value == null && result.resultB.value == null) {
+      return "I don't have $name data for either period ($labelA or $labelB). "
+          'Make sure Apple Health is synced and try again.';
+    }
+    if (result.resultA.value == null) {
+      final bVal = _fmt(result.resultB.value!, unit: result.resultB.unit);
+      return "I don't have $name data for $labelA. "
+          'For $labelB your $name was $bVal.';
+    }
+    if (result.resultB.value == null) {
+      final aVal = _fmt(result.resultA.value!, unit: result.resultA.unit);
+      return '$labelA your $name was $aVal. '
+          "I don't have $name data for $labelB to compare against.";
+    }
+
+    final aVal = _fmt(result.resultA.value!, unit: result.resultA.unit);
+    final bVal = _fmt(result.resultB.value!, unit: result.resultB.unit);
+    final delta = result.delta;
+    final pct = result.pctChange;
+
+    String changePhrase;
+    if (delta == null) {
+      changePhrase = '';
+    } else {
+      final absDelta = delta.abs();
+      final sign = delta >= 0 ? 'up' : 'down';
+      final deltaStr = _fmt(absDelta, unit: result.metric.unit);
+      if (pct != null && pct.abs() >= 1) {
+        changePhrase = ' — ${sign} ${deltaStr} (${pct.abs().toStringAsFixed(0)}%) '
+            'compared to $labelB.';
+      } else {
+        changePhrase = ' — ${sign} ${deltaStr} compared to $labelB.';
+      }
+    }
+
+    final interp = _comparisonInterpretation(result);
+    return '$labelA your $name was $aVal$changePhrase '
+        '$labelB it was $bVal. $interp';
+  }
+
+  String _comparisonInterpretation(WearableComparisonResult r) {
+    final delta = r.delta;
+    if (delta == null) return '';
+    final isPositiveGood = _isHigherBetter(r.metric);
+    final isImproving = isPositiveGood ? delta > 0 : delta < 0;
+    final isWorsening = isPositiveGood ? delta < 0 : delta > 0;
+    if (isImproving) {
+      return 'This is a positive trend — keep monitoring for consistency.';
+    }
+    if (isWorsening) {
+      return 'The trend is moving in the less favorable direction — '
+          'worth watching over the next several days.';
+    }
+    return 'The trend is relatively stable between the two periods.';
+  }
+
+  bool _isHigherBetter(WearableMetricSpec metric) {
+    return const {
+      'steps',
+      'active_energy_kcal',
+      'exercise_minutes',
+      'walking_running_distance_m',
+      'flights_climbed',
+      'workout',
+      'hrv_sdnn',
+      'heart_rate_recovery_1min',
+      'spo2',
+      'vo2_max',
+      'walking_speed_mps',
+      'walking_step_length_m',
+      'stair_ascent_speed_mps',
+      'stair_descent_speed_mps',
+      'six_minute_walk_distance_m',
+      'dietary_water_ml',
+    }.contains(metric.dbName);
+  }
+
+  // ── Multi-metric resolution ────────────────────────────────────────────
+
+  /// Resolves multiple metrics in a single user message that share one window.
+  /// Returns an empty list if fewer than 2 metrics match or no window is found.
+  List<WearableQueryPlan> resolveMultiple(
+    String userMessage, {
+    DateTime? now,
+  }) {
+    final lower = userMessage.toLowerCase();
+    final now_ = now ?? DateTime.now();
+    final window = _matchWindow(lower, now: now_);
+    if (window == null) return const [];
+
+    final seen = <String>{};
+    final plans = <WearableQueryPlan>[];
+    for (final spec in _kRegistry) {
+      for (final phrase in spec.phrases) {
+        if (lower.contains(phrase) && !seen.contains(spec.dbName)) {
+          seen.add(spec.dbName);
+          plans.add(WearableQueryPlan(metric: spec, window: window));
+          break;
+        }
+      }
+    }
+    // Only return multi-results when 2+ metrics were matched; single-metric
+    // falls through to the normal resolve() path.
+    return plans.length >= 2 ? plans : const [];
+  }
+
+  /// Executes multiple plans concurrently and returns all results.
+  Future<List<WearableAggResult>> executeMultiple(
+    List<WearableQueryPlan> plans,
+  ) async {
+    return Future.wait(plans.map(execute));
+  }
+
+  /// Renders a combined response for multiple metric results.
+  String renderMultiple(List<WearableAggResult> results) {
+    final buffer = StringBuffer();
+    for (var i = 0; i < results.length; i++) {
+      if (i > 0) buffer.write('\n\n');
+      buffer.write(render(results[i]));
+    }
+    return buffer.toString();
+  }
+
+  // ── Internal helpers ───────────────────────────────────────────────────
+
+  static bool _containsAll(String text, List<String> terms) =>
+      terms.every(text.contains);
+
+  static bool _containsAny(String text, List<String> terms) =>
+      terms.any(text.contains);
+
   // ── Metric matching ────────────────────────────────────────────────────
 
   WearableMetricSpec? _matchMetric(String lower) {
@@ -666,8 +1139,12 @@ class WearableAggregationService {
     final today = _dateStr(now);
     final yesterday = _dateStr(now.subtract(const Duration(days: 1)));
 
-    // "today"
-    if (lower.contains('today')) {
+    // "today" / "tonight" / "this evening"
+    if (lower.contains('today') ||
+        lower.contains('tonight') ||
+        lower.contains('this evening') ||
+        lower.contains('this morning') ||
+        lower.contains('so far today')) {
       return WearableWindow(
         grain: WearableGrain.day,
         startDate: today,
