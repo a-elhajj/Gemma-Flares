@@ -1,7 +1,7 @@
 <h1 align="center">Gemma Flares</h1>
 
 <p align="center">
-Track IBD patterns on iPhone with deterministic scoring and grounded Gemma summaries.
+Track IBD patterns from phone and wearable data with grounded Gemma summaries.
 </p>
 
 <p align="center">
@@ -11,8 +11,8 @@ Track IBD patterns on iPhone with deterministic scoring and grounded Gemma summa
     <a href="#testing">Testing</a>
 </p>
 
-Gemma Flares is a local-first Flutter iOS app for people tracking inflammatory
-bowel disease patterns and preparing for GI visits. It combines Apple Health
+Gemma Flares is a local-first Flutter app for people tracking inflammatory bowel
+disease patterns and preparing for GI visits. It combines phone and wearable
 context, symptom and lab logging, deterministic 7-day, 14-day, and 21-day risk
 pattern scores, and Gemma-assisted explanations that are grounded in local app
 evidence.
@@ -34,8 +34,8 @@ flutter pub get
 flutter run --dart-define=GEMMA_FLARES_DEV_RESET=true
 ```
 
-For physical iPhone profile runs, the repo includes a helper that keeps the
-default bundle model-free and lets first-run setup handle model installation:
+For current iOS profile runs, the repo includes a helper that keeps the default
+bundle model-free and lets first-run setup handle model installation:
 
 ```bash
 scripts/ios/run_ios_profile.sh --fast-ui --reset-setup -d <device-id>
@@ -46,8 +46,9 @@ scripts/ios/run_ios_profile.sh --fast-ui --reset-setup -d <device-id>
 - Computes deterministic 7-day, 14-day, and 21-day flare-risk pattern scores.
 - Separates scoring from Gemma so model output explains grounded evidence rather
     than deciding risk.
-- Ingests Apple Health and Apple Watch context through the native iOS bridge
-    after explicit user permission.
+- Ingests phone and wearable context from sources such as Oura Ring, Apple
+    Watch, Google watch devices, and other supported integrations after explicit
+    user permission.
 - Logs disease-aware check-ins for Crohn's disease, ulcerative colitis,
     indeterminate colitis, and IBS-style tracking.
 - Reviews symptom, lab, and extracted lab-report data before saving records.
@@ -60,8 +61,8 @@ scripts/ios/run_ios_profile.sh --fast-ui --reset-setup -d <device-id>
 
 ```mermaid
 flowchart TD
-    App[Flutter iOS app] --> Checkins[Check-ins and symptom logging]
-    App --> Health[HealthKit bridge]
+    App[Flutter app] --> Checkins[Check-ins and symptom logging]
+    App --> Health[Wearable data bridge]
     App --> Labs[Lab and photo intake]
     Health --> Normalize[Wearable normalization]
     Normalize --> Summary[Daily summaries]
@@ -74,7 +75,7 @@ flowchart TD
     Explain --> Review[Review-before-save UI]
 ```
 
-Flutter owns the product workflow while native iOS bridges handle HealthKit and
+Flutter owns the product workflow while native bridges handle wearable data and
 text-recognition integration. The risk engine persists auditable inputs and
 contribution breakdowns before Gemma services produce grounded explanations,
 extraction drafts, and summary text.
@@ -84,9 +85,9 @@ extraction drafts, and summary text.
 | Requirement | Version or note |
 | --- | --- |
 | Flutter | Stable channel with Dart SDK compatible with `^3.4.0` |
-| Xcode | Required for iOS builds and simulator/device runs |
-| macOS | Required for the iOS development workflow |
-| iPhone or iOS simulator | Required to run the app surface |
+| Xcode | Required for the current iOS build and simulator/device workflow |
+| macOS | Required for the current iOS development workflow |
+| Phone or simulator | Required to run the app surface |
 | `hf` CLI | Required only for `scripts/install_litert_lm_models.sh e2b` |
 | `shasum` | Required by model artifact verification scripts |
 
@@ -184,7 +185,7 @@ scripts/validation/verify_ios_release_artifact.sh build/ios/iphoneos/Runner.app 
 ├── db/migrations/       Ordered SQLite migration files
 ├── docs/                Public product-truth and engineering evidence docs
 ├── integration_test/    Device and adversarial integration tests
-├── ios/                 Native iOS project, HealthKit/OCR bridges, model folder
+├── ios/                 Native iOS project, wearable/OCR bridges, model folder
 ├── lib/                 Flutter app, feature screens, services, and database code
 ├── scripts/             Validation, iOS profile, and model artifact automation
 ├── test/                Unit, widget, integration, autonomous, and eval tests
@@ -264,13 +265,14 @@ Verify the public no-model release mode:
 scripts/validation/verify_ios_release_artifact.sh build/ios/iphoneos/Runner.app --mode=no-model
 ```
 
-Physical iPhone validation, signing, TestFlight upload, and App Store Connect
-processing require infrastructure outside this repository.
+Physical device validation, signing, TestFlight upload, and App Store Connect
+processing for the current iOS target require infrastructure outside this
+repository.
 
 ## Security
 
 Gemma Flares handles health-adjacent data, so changes should preserve the
-local-first boundary, explicit HealthKit permission flow, review-before-save
+local-first boundary, explicit wearable-data permission flow, review-before-save
 behavior, and local export/wipe controls. Do not commit model binaries,
 generated private data, signing material, real patient data, or secrets.
 
@@ -283,7 +285,7 @@ through the repository before disclosing sensitive issues publicly.
 | Problem | What to try |
 | --- | --- |
 | Setup wizard does not reappear during development | Run with `--dart-define=GEMMA_FLARES_DEV_RESET=true`; the reset is ignored in release builds. |
-| Profile iPhone runs fail while staging large app bundles | Use `scripts/ios/run_ios_profile.sh --fast-ui -d <device-id>` to keep the bundle model-free. |
+| Profile device runs fail while staging large app bundles | Use `scripts/ios/run_ios_profile.sh --fast-ui -d <device-id>` to keep the bundle model-free. |
 | Model install fails with `Missing required command: hf` | Install and authenticate the Hugging Face CLI before running `scripts/install_litert_lm_models.sh e2b`. |
 | Model checksum verification fails | Remove the staged download directory or verify `LITERT_LM_E2B_SHA` before retrying. |
 | Gold RAP takes too long locally | Use `GOLD_RAP_LOCAL_DEV=1 bash scripts/validation/validate_gold_rap.sh` to exclude `extended` and `slow` tests. |

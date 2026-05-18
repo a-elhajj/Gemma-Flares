@@ -56,7 +56,7 @@ Install the approved E2B model for seeded local builds:
 scripts/install_litert_lm_models.sh e2b
 ```
 
-Run a fast profile build on a physical iPhone:
+Run a fast profile build on a physical device:
 
 ```bash
 scripts/ios/run_ios_profile.sh --fast-ui --reset-setup -d <device-id>
@@ -85,7 +85,7 @@ scripts/ios/run_ios_profile.sh --fast-ui --reset-setup -d <device-id>
 
 - Preserve strict shell behavior with `set -euo pipefail`.
 - Keep release checks deterministic and auditable.
-- Document external blockers such as signing, physical iPhone access,
+- Document external blockers such as signing, physical device access,
   TestFlight, network access, and model downloads.
 - Prefer adding checks over weakening existing gates.
 
