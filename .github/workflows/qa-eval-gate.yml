@@ -1,0 +1,38 @@
+name: GutGuard QA Eval Gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  qa-eval-gate:
+    runs-on: macos-14
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run QA eval gate
+        run: |
+          dart run tooling/gemma_eval/generate_persona_suite.dart
+          dart run tooling/gemma_eval/evaluate_persona_suite.dart tooling/gemma_eval/out/persona_suite_journeys.jsonl
+          GEMMA_EVAL_SCENARIOS=tooling/gemma_eval/out/persona_suite_journeys.jsonl \
+          GEMMA_EVAL_OUTPUT=tooling/gemma_eval/out/local_agent_persona_suite_results.jsonl \
+          GEMMA_EVAL_LIMIT=128 \
+          flutter test test/gemma_eval/local_agent_eval_runner_test.dart
+          dart run tooling/gemma_eval/evaluate_response_vibe.dart tooling/gemma_eval/out/local_agent_persona_suite_results.jsonl
+          RUN_ID="ci_${GITHUB_SHA::7}"
+          dart run tooling/qa_pipeline/build_qa_evidence.dart --run-id "$RUN_ID"
+          dart run tooling/qa_pipeline/triage_persona_failures.dart --run-id "$RUN_ID"
+          dart run tooling/qa_pipeline/create_qa_handoff.dart --run-id "$RUN_ID"
+          dart run tooling/qa_pipeline/validate_release_gate.dart --run-id "$RUN_ID"

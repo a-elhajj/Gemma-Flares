@@ -1,0 +1,40 @@
+name: GutGuard Release Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Existing QA run ID to validate
+        required: true
+        type: string
+      physical_required:
+        description: Require physical device evidence
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  release-gate:
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Validate release gate
+        run: |
+          args=(--run-id "${{ inputs.run_id }}")
+          if [[ "${{ inputs.physical_required }}" == "true" ]]; then
+            args+=(--physical-required)
+          fi
+          dart run tooling/qa_pipeline/validate_release_gate.dart "${args[@]}"

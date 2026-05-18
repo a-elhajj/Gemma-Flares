@@ -1,0 +1,56 @@
+name: gemma_flares
+description: Local-first Crohn's flare companion with Apple Watch ingestion and Gemma 4 E2B on iPhone.
+publish_to: 'none'
+version: 1.0.0+16
+
+environment:
+  sdk: ^3.4.0
+
+dependencies:
+  archive: ^4.0.7
+  collection: ^1.18.0
+  crypto: ^3.0.7
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^18.0.0
+  flutter_secure_storage: ^9.2.2
+  image_cropper: ^12.2.1
+  image_picker: ^1.1.0
+  intl: ^0.19.0
+  json_annotation: ^4.9.0
+  local_auth: ^2.3.0
+  meta: ^1.17.0
+  path: ^1.9.1
+  path_provider: ^2.1.4
+  # Pin to the pre-FFI implementation. 2.6.0 switched to a code_assets/objective_c
+  # FFI path that fails to dlopen on iOS simulator with "incompatible platform
+  # (have 'iOS-simulator', need 'iOS')". 2.5.1 ships a native Swift plugin.
+  path_provider_foundation: 2.5.1
+  pdf: ^3.11.1
+  permission_handler: ^11.3.0
+  share_plus: ^10.0.0
+  speech_to_text: ^7.3.0
+  get_it: ^7.7.0
+  sqflite_sqlcipher: ^3.3.0
+  url_launcher: ^6.3.2
+  flutter_markdown: ^0.7.7+1
+  flutter_litert_lm: ^0.3.0
+
+dev_dependencies:
+  build_runner: ^2.4.13
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  json_serializable: ^6.9.3
+  mockito: ^5.4.5
+  sqflite_common_ffi: ^2.3.6
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/clinical/
+    - assets/i18n/
+    - assets/models/
+    - db/migrations/

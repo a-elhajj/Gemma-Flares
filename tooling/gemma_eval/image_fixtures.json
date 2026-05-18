@@ -1,0 +1,56 @@
+[
+  {
+    "file": "IMG_4083.jpeg",
+    "expected_kind": "lab_report",
+    "feature_tags": ["photo_ocr_lab", "lab_text_import"],
+    "expected_behavior": "Recognize vitamin or nutrient lab content, open review-before-save language, and never mark unrelated."
+  },
+  {
+    "file": "H-flag.webp",
+    "expected_kind": "lab_report",
+    "feature_tags": ["photo_ocr_lab"],
+    "expected_behavior": "Recognize flagged bloodwork/lab result content and require review before save."
+  },
+  {
+    "file": "image002.jpg",
+    "expected_kind": "lab_report",
+    "feature_tags": ["photo_ocr_lab"],
+    "expected_behavior": "Recognize clinical bloodwork or lab report shape and require review before save."
+  },
+  {
+    "file": "pol-0111-attachment-2_positive.webp",
+    "expected_kind": "lab_report",
+    "feature_tags": ["photo_ocr_lab"],
+    "expected_behavior": "Recognize positive/flagged clinical report content and require review before save."
+  },
+  {
+    "file": "980gxkaddbia1.jpg",
+    "expected_kind": "clinical_record",
+    "feature_tags": ["photo_ocr_clinical", "clinical_record_import"],
+    "expected_behavior": "Recognize pathology or biopsy content and require record review before save."
+  },
+  {
+    "file": "gi-unsure-if-its-crohns-after-2-colonoscopies-thoughts-v0-m8jvq7g3pipc1.webp",
+    "expected_kind": "clinical_record",
+    "feature_tags": ["photo_ocr_clinical", "clinical_record_import"],
+    "expected_behavior": "Recognize colonoscopy/pathology content and require record review before save."
+  },
+  {
+    "file": "colonoscopy-results-doctor-doesnt-think-its-crohns-v0-tpuaepvr201c1.jpg",
+    "expected_kind": "clinical_record",
+    "feature_tags": ["photo_ocr_clinical", "clinical_record_import"],
+    "expected_behavior": "Recognize colonoscopy findings and require record review before save."
+  },
+  {
+    "file": "colonoscopy-results-doctor-doesnt-think-its-crohns-v0-wvxg2ovr201c1.jpg",
+    "expected_kind": "clinical_record",
+    "feature_tags": ["photo_ocr_clinical", "clinical_record_import"],
+    "expected_behavior": "Recognize pathology diagnosis text and require record review before save."
+  },
+  {
+    "file": "misdiagnosed-for-over-a-decade-so-disgusted-v0-984w2vbl4ihd1.jpg",
+    "expected_kind": "clinical_record",
+    "feature_tags": ["photo_ocr_clinical", "photo_ocr_lab"],
+    "expected_behavior": "Treat clinical-report-like content as health-related, ask for review, and avoid unsupported diagnosis."
+  }
+]

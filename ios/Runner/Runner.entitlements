@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<!--
+	Required for the on-device Gemma 4 runtime.
+	Without these the iOS jetsam watermark caps the process at ~3.3 GB,
+	which can be below the resident-set required to mmap and run large
+	on-device E2B model artifacts.
+	- increased-memory-limit raises the watermark on supported devices
+	  (A12+ / iPhone XS and later, including iPhone 16 Pro) to ~5 GB.
+	- extended-virtual-addressing allows VM allocations larger than 4 GB
+	  so the model file can be mmap'd in a single contiguous mapping.
+	These capabilities are not available to Personal Team provisioning.
+	Debug/Profile device runs use Runner.DevProfile.entitlements instead.
+	Keep this file for paid-team Release/TestFlight signing.
+	-->
+	<key>com.apple.developer.kernel.increased-memory-limit</key>
+	<true/>
+	<key>com.apple.developer.kernel.extended-virtual-addressing</key>
+	<true/>
+</dict>
+</plist>

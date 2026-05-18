@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "model_id": "logistic_risk_v1",
+  "status": "MVP_PRIOR",
+  "citation": "Hirten et al., Gastroenterology 2025;168:939-951",
+  "description": "Logistic regression priors derived from Mount Sinai wearable IBD flare prediction study. Three prediction horizons: 7, 14, and 21 days.",
+  "features": [
+    {
+      "id": "hrv_sdnn",
+      "label": "HRV SDNN (normalized)",
+      "description": "Standard deviation of NN intervals from cosinor-fitted wearable data",
+      "weight_7d": -0.42,
+      "weight_14d": -0.38,
+      "weight_21d": -0.31,
+      "direction": "lower_is_higher_risk",
+      "missing_strategy": "median_impute"
+    },
+    {
+      "id": "hrv_mesor",
+      "label": "HRV MESOR (normalized)",
+      "description": "Midline-estimating statistic of rhythm for HRV circadian cosinor fit",
+      "weight_7d": -0.35,
+      "weight_14d": -0.30,
+      "weight_21d": -0.25,
+      "direction": "lower_is_higher_risk",
+      "missing_strategy": "median_impute"
+    },
+    {
+      "id": "hrv_amplitude",
+      "label": "HRV Amplitude (normalized)",
+      "description": "Circadian amplitude from cosinor model of HRV",
+      "weight_7d": -0.28,
+      "weight_14d": -0.24,
+      "weight_21d": -0.19,
+      "direction": "lower_is_higher_risk",
+      "missing_strategy": "median_impute"
+    },
+    {
+      "id": "rhr_7d_trend",
+      "label": "Resting Heart Rate 7-day trend",
+      "description": "Slope of resting HR over trailing 7 days relative to personal baseline",
+      "weight_7d": 0.38,
+      "weight_14d": 0.33,
+      "weight_21d": 0.27,
+      "direction": "higher_is_higher_risk",
+      "missing_strategy": "zero"
+    },
+    {
+      "id": "steps_deficit",
+      "label": "Steps deficit vs. personal baseline",
+      "description": "Percent below 30-day rolling mean step count",
+      "weight_7d": 0.22,
+      "weight_14d": 0.20,
+      "weight_21d": 0.16,
+      "direction": "higher_is_higher_risk",
+      "missing_strategy": "zero"
+    },
+    {
+      "id": "spo2_low_night",
+      "label": "Nocturnal SpO2 < 94% events",
+      "description": "Count of overnight SpO2 dips below 94%, 7-day rolling",
+      "weight_7d": 0.18,
+      "weight_14d": 0.15,
+      "weight_21d": 0.11,
+      "direction": "higher_is_higher_risk",
+      "missing_strategy": "zero"
+    },
+    {
+      "id": "symptom_burden_7d",
+      "label": "Symptom burden score (7d)",
+      "description": "Weighted sum of logged symptom severity scores over trailing 7 days",
+      "weight_7d": 0.51,
+      "weight_14d": 0.45,
+      "weight_21d": 0.38,
+      "direction": "higher_is_higher_risk",
+      "missing_strategy": "zero"
+    },
+    {
+      "id": "stool_frequency_trend",
+      "label": "Stool frequency trend",
+      "description": "Change in daily bowel movement count vs. personal baseline",
+      "weight_7d": 0.44,
+      "weight_14d": 0.39,
+      "weight_21d": 0.32,
+      "direction": "higher_is_higher_risk",
+      "missing_strategy": "zero"
+    }
+  ],
+  "intercepts": {
+    "7d": -1.8,
+    "14d": -2.1,
+    "21d": -2.4
+  },
+  "risk_bands": {
+    "low":    { "min": 0.00, "max": 0.30, "label": "Low",    "color_hex": "#4CAF50" },
+    "medium": { "min": 0.30, "max": 0.60, "label": "Medium", "color_hex": "#FF9800" },
+    "high":   { "min": 0.60, "max": 1.00, "label": "High",   "color_hex": "#F44336" }
+  },
+  "confidence_penalties": {
+    "missing_wearable_days_threshold": 3,
+    "missing_wearable_penalty_per_day": 0.03,
+    "missing_symptom_data_penalty": 0.05
+  }
+}

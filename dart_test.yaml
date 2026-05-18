@@ -1,0 +1,15 @@
+tags:
+  slow:
+    # Persona harness, autonomous UI flows, and end-to-end integration suites.
+    # Inner-loop developer runs should exclude this tag for speed:
+    #   flutter test --exclude-tags=slow      (~9 min, 1408 tests)
+    # Gold RAP local pre-push excludes this tag by default.
+    # CI/full validation runs the full suite (no flag):
+    #   flutter test                          (~78 min, 1434 tests)
+    timeout: 3x
+  extended:
+    # Large comprehensive/regression suites that are useful for broader
+    # verification but too expensive for every inner-loop run.
+    # Gold RAP local pre-push excludes this tag by default:
+    #   GOLD_RAP_LOCAL_DEV=1 bash scripts/validation/validate_gold_rap.sh
+    timeout: 2x

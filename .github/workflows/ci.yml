@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  flutter:
+    name: Gold RAP Repo Invariants
+    runs-on: macos-14
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Gold RAP schema and safety checks
+        run: bash scripts/validation/validate_gold_rap.sh
+        env:
+          GOLD_RAP_SCHEMA_SAFETY_ONLY: "1"

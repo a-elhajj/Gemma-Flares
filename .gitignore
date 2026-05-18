@@ -1,0 +1,71 @@
+# Flutter / Dart generated
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+build/
+coverage/
+flutter_*.log
+
+# Test, analysis, and evaluation outputs
+analysis_*.txt
+test_*.txt
+full_summary.txt
+tooling/autonomous_ui/out/
+tooling/gemma_eval/out/
+docs/qa_pipeline_artifacts/
+
+# iOS / Xcode local outputs
+DerivedData/
+*.xcuserstate
+*.xcresult
+*.xcarchive
+*.dSYM
+*.ipa
+
+# Local data and exports (may contain sensitive health information)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*_diagnostics_*.json
+*_export_*.json
+local_data_export_*.json
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+.venv/
+
+# Local runtime artifacts (managed outside git)
+ios/Runner/Models/*
+!ios/Runner/Models/README.md
+!ios/Runner/Models/MODEL_ARTIFACTS.md
+
+# macOS / IDE local metadata
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+._*
+*.iml
+.idea/
+.vscode/
+
+# Internal workflow config not required for public app source
+.github/copilot-instructions.md
+.github/copilot-instructions-backup.md
+.github/skills/
+
+# Local scratch files
+*backup/
+*backup*
+maya-*
